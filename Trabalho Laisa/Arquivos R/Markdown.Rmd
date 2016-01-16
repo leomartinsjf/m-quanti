@@ -1,0 +1,367 @@
+---
+title: "AVALIAÇÃO MÉTODOS E TÉCNICAS DE PESQUISA QUANTITATIVA – 2015"
+author: "Leonardo Martins"
+date: "5 de janeiro de 2016"
+output: html_document
+---
+
+##Apresentação
+
+O presente relatório foi elaborado utilizando o RStudio (0.99) e o pacote R versão 3.2.2 (2015). Todo o script em markdown utilizado para gerar o relatório, assim como imagens, banco de dados e outros arquivos complementares estão disponíveis para consulta no seguinte repositório do github <http://github.com/leomartinsjf/m-quanti>
+
+O relatório final pode ser acessado através do link <http://rpubs.com/leomartinsjf/m-quanti>
+
+***
+
+##1. Exercício
+
+Um estudo visava avaliar questões de saúde mental entre professores universitários. Em um recorte do estudo, foram aplicadas duas escalas psicométricas, uma para Depressão e outra para Ansiedade, nos 16 professores do curso de Psicologia de uma universidade. Os pesquisadores pretendem saber se há uma relação entre estes dois construto, e se este comportamento é diferente entre o sexo dos professores. Responda as questões abaixo, sempre deixando clara a intepretação e justificativa dos resultados (40 pontos).
+
+###*Tabela de Dados*
+
+ID|Depressão| Ansiedade|Sexo
+:--:|:---------:|:----------:|:----:
+1|56|54|M
+2|45|45|M
+3|48|35|F
+4|42|39|M
+5|59|53|M
+|6|62|51|F
+|7|68|53|M
+|8|48|53|M
+|9|43|50|M
+|10|48|42|M
+|11|60|45|M
+|12|61|52|M
+|13|48|38|F
+|14|55|39|M
+|15|49|41|F
+|16|58|44|F
+
+***
+###a).	Que tipos de variáveis foram utilizadas (natureza das variáveis)?
+
+  No presente estudo foram utilizadas variáveis quantitativas e qualitativas. As escalas de Depressão e Ansiedade podem ser consideradas como variáveis quantitativas intervalares, pois elas representam a mensuração de uma variável latente através de uma escala numérica que não possui zero absoluto. A variável Sexo é uma variável qualitativa nominal, pois determina duas categorias distintas e mutuamente excludentes, através das quais podemos contar a frequência de observações feita para cada categoria...
+
+---
+###b).	Monte uma tabela com as análises descritivas do banco de dados total. Faça também uma análise descritiva das escalas dentro de cada grupo de Sexo. Não se esqueçam de: Porcentagens, Medidas de tendência central (média e/ou mediana), Desvio padrão, Intervalo Interquartil etc...
+
+A seguir, a fim de preparar as estatísticas descritivas, foi elaborado uma rotina no software R que está descrita abaixo e que é complementada por uma tabela e conjunto de gráficos que sintetizam os resultados. 
+
+
+####**Preparação para as análises - Script R**
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/', warning=FALSE, message=FALSE)
+```
+
+Importando a tabela de dados em CSV
+
+```{r}
+base <- read.csv("~/m-quanti/Trabalho Laisa/base.csv", sep=";") 
+#Geração do objeto "base" a partir dos dados importados de um arquivo em CSV 
+```
+
+
+Carregando os pacotes que serão utilizados nas análises
+```{r}
+require(psych)
+require(gridExtra)
+require(ggplot2)
+require(car)
+```
+
+***
+####**a.1. Análise Descritiva Geral**
+
+Obtenção das principais estatísticas descritivas das variáveis do total da amostra
+```{r}
+summary(base)
+```
+
+Complementação das estatísticas descritivas para as variáveis quantitativas utilizando a função "describe" do pacote "psych" 
+```{r}
+describe(base$depressao)
+describe(base$ansiedade)
+```
+
+####**a.2. Análise Descritiva das Escalas por Sexo**
+
+Usando a função "tapply" e "describeBy" para repetir as análises descritivas anteriores das escalas agora por sexo para: 
+
+**a.2.1 Estatisticas Descritivas - Escala Depressão**
+
+```{r}
+tapply(base$depressao, base$sexo, summary)
+describeBy(base$depressao, base$sexo)
+```
+
+**a.2.2 Gráficos Escala de Depressão** 
+```{r}
+#Histograma de Frequencias*
+d0<-ggplot(base, aes(depressao)) + theme(legend.position = "none") + geom_histogram(colour = "black", fill = "white") + labs(x = "Escores", y = "Frequência")
+
+#Histograma de Densidade com Curva Normal Teórica*
+d1<- ggplot(base, aes(depressao)) + theme(legend.position = "none") + geom_histogram(aes(y = ..density..), colour = "black", fill = "white") + labs(x = "Escores", y = "Densidade") + stat_function(fun = dnorm, args = list(mean = mean(base$depressao, na.rm = TRUE), sd = sd(base$depressao, na.rm = TRUE)), colour = "black", size = 1)
+
+#Q-Q plot*
+d2<- ggplot(base, aes(sample = depressao)) + stat_qq(colour = "black", fill = "white") + labs(x = "QQ - Distribuição Normal Teórica", y = "Escore Depressão") + theme(legend.position = "none")
+
+#Boxplot*
+d3<- ggplot(base, aes(x=factor(0), depressao)) + geom_boxplot(colour = "black", fill = "white") + labs(x = "Box-Plot", y = "Escores Depressão") + theme(legend.position = "none", axis.ticks.x=element_blank(), axis.text.x=element_blank())
+```
+
+**a.3.1 Estatisticas Descritivas - Escala Ansiedade**
+
+```{r}
+tapply(base$ansiedade, base$sexo, summary)
+describeBy(base$ansiedade, base$sexo)
+```
+
+**a.3.2  Gráficos - Escalas Ansiedade**
+```{r}
+#Histograma de Frequencias*
+d0<-ggplot(base, aes(ansiedade)) + theme(legend.position = "none") + geom_histogram(colour = "black", fill = "white") + labs(x = "Escores", y = "Frequência")
+
+#Histograma de Densidade com Curva Normal Teórica*
+d1<- ggplot(base, aes(ansiedade)) + theme(legend.position = "none") + geom_histogram(aes(y = ..density..), colour = "black", fill = "white") + labs(x = "Escores", y = "Densidade") + stat_function(fun = dnorm, args = list(mean = mean(base$ansiedade, na.rm = TRUE), sd = sd(base$ansiedade, na.rm = TRUE)), colour = "black", size = 1)
+
+#Q-Q plot*
+d2<- ggplot(base, aes(sample = ansiedade)) + stat_qq(colour = "black", fill = "white") + labs(x = "QQ - Distribuição Normal Teórica", y = "Escore Ansiedade") + theme(legend.position = "none")
+
+#Boxplot*
+d3<- ggplot(base, aes(x=factor(0), ansiedade)) + geom_boxplot(colour = "black", fill = "white") + labs(x = "Box-Plot", y = "Escores Ansiedade") + theme(legend.position = "none", axis.ticks.x=element_blank(), axis.text.x=element_blank())
+```
+
+***
+
+####**Apresentação dos Resultados Sintetizados das Análises Descritivas**  
+
+**Sexo** 
+
+A amostra estudada foi composta por 16 pessoas, sendo 11 do sexo masculino (68,75%) e o restante do sexo feminino. 
+
+
+**a) Escala de Depressão**
+
+  Os escores da escala de depressão variaram 26 unidades, com valor mínimo de 42 e máximo de 68 pontos. A pontuação mediana (P50) na escala de depressão foi igual a 52  e a pontuação média foi de 53,1 pontos (DP= 7,72), apontando para uma leve assimetria positiva (Skewness = 0,22 se= 1,93). Os primeiros 25% da amostra (Q1) tiveram até 48 pontos na escala e os 25% escores superiores (Q3) obtiveram 59,5 pontos ou mais. 
+
+  **a.1) Mulheres**
+  
+  Os escores da escala de depressão entre as mulheres variou 14 unidades, com valor mínimo de 48 e máximo de 62 pontos. A pontuação mediana (P50) na escala foi igual a 49 pontos e a pontuação média foi de 53,0 pontos (DP= 6,56), apontando para uma leve assimetria positiva (Skewness = 0,36 se= 2,93). Os primeiros 25% da amostra (Q1) obtiveram até 48 pontos na escala e os 25% escores superiores (Q3) obtiveram 58 pontos ou mais.
+  
+  **a.2) Homens**
+  
+  Os escores da escala de depressão entre homens variou 26 unidades, com valor mínimo de 42 e máximo de 68 pontos. A pontuação mediana (P50) na escala foi igual a 55 pontos e a pontuação média foi de 53,2 pontos (DP= 8,49), apontando também para uma leve assimetria positiva (Skewness = 0,15 se= 2,56). Os primeiros 25% da amostra (Q1) obtiveram até 45 pontos na escala e os 25% escores superiores (Q3) obtiveram 60 pontos ou mais.
+  
+  Os resultados descritos acima podem ser observados na **Tabela 1**.
+
+**a.3) Distribuição dos Escores**  
+  
+  A distribuição dos escores totais na amostra, considerando o tamanho pequeno do n foi feita por inspeção visual e não parecem não apontar para que os dados sejam provenientes de uma distribuição normal, apesar de serem aproximadamente simétricos, apresentam importante desvio com relação à Kurtosis. Como não existe uma informação prévia acerca desta distribuição na população, a partir de uma postura conservadora, aceitamos a hipótese nula que afirma que esta distribuição não é proveniente de uma população normal. 
+  
+  Os gráficos utilizados para inspeção visual podem ser observados no **Figura 1**.
+
+**Tabela 1. Análise descritiva dos níveis de Depressão na amostra total e por sexo**
+
+| Escala de Depressão 	| Feminino (n=5) 	| Masculino(n=11) 	| Total(n=16)   |
+|:-------------------:	|:--------:	|:---------:	|:-----:	|
+| Média               	|    53,0  	|    53,2   	|  53,1 	|
+| Desvio padrão       	|    6,56   |    8,49    	|  7,72  	|
+| Mínimo              	|    48    	|     42    	|   42  	|
+| Percentil 25        	|    48    	|     45    	|   48  	|
+| Percentil 50        	|    49    	|     55    	|   52  	|
+| Percentil 75        	|    58    	|     60    	|  59,5 	|
+| Máximo              	|    62    	|     68    	|   68  	|
+| Amplitude           	|    14    	|     26    	|   26  	|
+| Intervalo IQ        	|    10    	|     15    	|  11,5 	|
+| Skewness        	    |   0,38 	  |    0,15     |  0,22   |
+| Kurtosis       	      |  -2,06 	  |   -1,47  	  | -1,30   |
+
+**Figura 1 - Análise Descritiva Gráfica - Escala Depressão**
+```{r}
+#Plotar gráficos Quadro 1
+grid.arrange(d0, d1, d2, d3, ncol=2, top="Quadro1 - Análise Descritiva Gráfica - Escala Depressão")
+```
+
+
+***
+
+###**b) Escala de Ansiedade**
+
+  Os escores da escala de ansiedade variaram 19 unidades, com valor mínimo de 35 e máximo de 54 pontos. A pontuação mediana (P50) na escala de ansiedade foi igual a 45  e a pontuação média foi de 45,9 pontos (DP= 6,42), apontando para uma leve assimetria negativa (Skewness = -0,13 se= 1,60). Os primeiros 25% da amostra (Q1) tiveram até 40,5 pontos na escala e os 25% escores mais altos (Q3) obtiveram 52,2 pontos ou mais. 
+
+  **b.1) Mulheres**
+  
+  Os escores da escala de ansiedade entre as mulheres variou 16 unidades, com valor mínimo de 35 e máximo de 51 pontos. A pontuação mediana (P50) na escala foi igual a 41 pontos e a pontuação média foi de 41,8 pontos (DP= 6,56), apontando para uma leve assimetria positiva (Skewness = 0,36 se= 2,75). Os primeiros 25% da amostra (Q1) obtiveram até 38 pontos na escala e os 25% escores superiores (Q3) obtiveram 51 pontos ou mais.
+  
+  **b.2) Homens**
+  
+  Os escores da escala de ansiedade entre homens variou 16 unidades, com valor mínimo de 39 e máximo de 54 pontos. A pontuação mediana (P50) na escala foi igual a 50 pontos e a pontuação média foi de 47,7 (DP= 5,88), apontando para uma leve assimetria negativa (Skewness = -0,35 se= 1,77). Os primeiros 25% da amostra (Q1) obtiveram até 43,5 pontos na escala e os 25% escores mais altos (Q3) obtiveram 54 pontos ou mais.
+  
+  Os resultados descritos podem ser observados na **Tabela 2**.
+
+**b.3) Distribuição dos Escores**  
+  
+  A análise da distribuição dos escores totais na amostra, considerando o tamanho pequeno do “n” foi feita também por inspeção visual e não apresenta indícios fortes de que os dados sejam provenientes de uma distribuição normal, apresentando uma assimétrica negativa ainda que leve e importante desvio com relação à Kurtosis. Como não existe uma informação prévia acerca desta distribuição na população, a partir de uma postura conservadora, aceitamos a hipótese nula que afirma que esta distribuição não é proveniente de uma população normal. 
+  
+  Os gráficos utilizados para inspeção visual podem ser observados no **Figura 2**.
+
+**Tabela 2. Análise descritiva dos níveis de Ansiedade na amostra total e por sexo**
+
+| Escala de Ansiedade | Feminino (n=5) | Masculino (n=11) | Total (n=16) |
+|:-------------------:|:--------:|:---------:|:-----:|
+| Média               | 41,8     | 47,7      | 45,9  |
+| Desvio Padrão       | 6,14     | 5,88      | 6,42  |
+| Mínimo              | 35       | 39        | 35    |
+| Percentil 25        | 38       | 43,5      | 40,5  |
+| Percentil 50        | 41       | 50        | 45    |
+| Percentil 75        | 44       | 53        | 52,2  |
+| Máximo              | 51       | 54        | 54    |
+| Amplitude           | 16       | 15        | 19    |
+| Intervalo IQ        | 6        | 11        | 12,5  |
+| Skewness        	  | 0,36   	 | -0,35     |-0,13  |
+| Kurtosis       	    |-1,66  	 | -1,71   	 |-1,62  |
+
+**Figura 2 - Análise Descritiva Gráfica - Escala Ansiedade**
+```{r}
+#Plotar Gráficos Quadro 2
+grid.arrange(d0, d1, d2, d3, ncol=2, top="Quadro 2 - Análise Descritiva Gráfica - Escala Ansiedade")
+```
+
+***
+##c).	Existe diferença entre Homens e Mulheres quanto à Depressão e Ansiedade?  Formule as hipóteses Nula e Alternativa e aplique os testes adequados para respondê-las.
+
+####**Hipóteses - Diferença entre Homens e Mulheres em Relação à Depressão**
+
+**Hipótese Nula (H0) :** 
+
+Não existe diferença estatisticamente significativa entre homens e mulheres em relação os níveis de depressão mensurados pela escala utilizada.
+
+**Hipótese Alternativa (H1):**
+
+Existe diferença estatisticamente significativa entre homens e mulheres em relação aos níveis de depressão mensurados pela escala utilizada.
+
+**Análise de Dados**
+
+Considerando a análise exploratória dos dados realizada anteriormente, assume-se aqui que as distribuições dos níveis de depressão entre homens e mulheres não é proveniente de uma distribuição normal. Logo, considerando o tamanho de "n" pequeno e o desbalanceamento da amostra em relação ao sexo, optou-se por utilizar o teste de Wilcoxon para 2 amostras independentes, assumindo um nível de significância de 5% para rejeitar a hipótese nula.
+
+**Resultados**
+
+```{r}
+# Duas amostras independentes -  Teste de Wilcoxon/Mann-Whitney U 
+wilcox.test(base$depressao~base$sexo) 
+```
+
+  Comparando a distribuições dos escores de depressão entre homens e mulheres é possível observar que os homens apresentaram um valor de escore mediano maior (Md= 55) do que as mulheres (Md= 49). É possível observar através do boxplot (**Figura 3**) que apesar desta diferença em relação à mediana a distribuição dos escores das mulheres está sobreposta à dos homens, indicando uma possível ausência de diferença entre os grupos que é apoiada pelo resultado do teste de Wilcoxon que nos leva a não rejeitar a hipótese nula (W=30, p=0,819). 
+  
+
+**Figura 3 - Boxplot Escores de Depressão por Sexo**
+```{r}
+ggplot(base, aes(sexo, depressao)) + geom_boxplot(colour = "black", fill = "white") + labs(x = "Sexo", y = "Escores Depressão") + theme(legend.position = "none")
+```
+
+***
+
+####**Hipóteses - Diferença entre Homens e Mulheres em Relação à Ansiedade**
+
+*Hipótese Nula (H0) :* 
+
+Não existe diferença estatisticamente significativa entre homens e mulheres em relação os níveis de ansiedade mensurados pela escala utilizada.
+
+*Hipótese Alternativa (H1):*
+
+Existe diferença estatisticamente significativa entre homens e mulheres em relação aos níveis de ansiedade mensurados pela escala utilizada.
+
+**Análise de Dados**
+
+Considerando a análise exploratória dos dados realizada anteriormente, assume-se aqui que a distribuição dos níveis de ansiedade entre homens e mulheres não é proveniente de uma distribuição normal. Logo, considerando o tamanho de "n" pequeno e o desbalanceamento da amostra em relação à sexo optou-se também por utilizar o teste de Wilcoxon para 2 amostras independentes, assumindo um nível de significância de 5% para rejeitar a hipótese nula.
+
+**Resultados**
+
+```{r}
+# Duas amostras independentes -  Teste de Wilcoxon/Mann-Whitney U 
+wilcox.test(base$ansiedade~base$sexo) 
+```
+
+  Comparando a distribuições dos escores de ansiedade entre homens e mulheres é possível observar que os homens apresentaram um valor de escore mediano maior (Md=50) do que as mulheres (P50=41). É possível observar através do boxplot (**Figura 4**) que além desta diferença entre as medianas a distribuição dos escores representada pelas caixas (intervalo interquatílico) apresenta pouca sobreposição, indicando uma possível diferença entre os grupos. Contudo, o resultado do teste de Wilcoxon nos leva a não rejeitar a hipótese nula em um nível de significância de 5% (W=30, p=0,069). 
+  
+**Figura 4 - Boxplot Escores de Ansiedade por Sexo**
+```{r}
+ggplot(base, aes(sexo, ansiedade)) + geom_boxplot(colour = "black", fill = "white") + labs(x = "Sexo", y = "Escores Ansiedade") + theme(legend.position = "none")
+```
+
+
+###d) Depressão e Ansiedade são correlacionadas (amostra geral)? 
+
+**Hipótese Nula (H0):** 
+
+  Não existe correlação estatisticamente significativa entre os escores de Ansiedade e Depressão na amostra geral.
+
+**Hipótese Alternativa (H1):**
+
+  Existe algum grau de correlação estatisticamente significativa entre Ansiedade de Depressão na amostra geral.
+  
+**Análise de Dados**
+
+Observando as características de ambas as distribuições já citadas anteriormente optou-se por utilizar o teste não paramétrico da correlação bi-variada de Spearman-Brown para testar a hipótese nula a um nível de significância de 5%.   
+
+**Resultados**
+
+```{r}
+cor.test(base$depressao, base$ansiedade, method="spearman")
+```
+
+  A inspeção visual da associação entre os escores das variáveis depressão e ansiedade parece apontar para uma correlação positiva moderada/fraca como apontada pelo rho=0,49 de Spearman-Brown e que pode ser observado em maiores detalhes na (**Figura 5**). Contudo, partindo do nível de significância adotado em comparação com a significância encontrada (p=0,056) optamos por aceitar a hipótese nula, indicado que a associação visível pode ter sido fruto do acaso. 
+  Cabe destacar, entretanto, que em uma amostra maior poderíamos potencialmente indicar que a associação entre as variáveis é estatisticamente significativa, assumindo aqui o indicativo que o resultado foi próximo do nível de significância adotado e que em amostras pequenas corremos um maior risco de cometar um erro do Tipo II, aceitando a hipótese nula quando esta é falsa - exigindo, tão logo, cautela na tomada de decisão em relação aos resultados encontrados aqui.  
+
+**Figura 5 - Gráfico de Dispersão - Escalas de Ansiedade e Depressão (com reta de regressão paramétrica e não paramétrica).**
+```{r}
+scatterplot(depressao ~ ansiedade, data=base, xlab="Escore Depressão", ylab="Escore Ansiedade", main= "Figura 5 - Correlação entre Ansiedade e Depressão")
+```
+
+###Exercício 2
+
+A tabela 1 abaixo foi retirada do artigo *“Risks of anemia in infants according to dietary iron density and weight gain rate”*, publicado na revista **Preventive Medicine**. Neste estudo, os pesquisadores queriam saber quais eram os fatores de risco para Anemia, classificada como “Sim” (tem anemia) e “Não” (não tem anemia). Foram testadas inúmeras variáveis como possíveis fatores de risco associados a anemia, dentre elas as variáveis sociodemográficas que estão apresentadas na tabela. As variáveis são “Ocupação da Mãe” (Trabalhadora ou Dona de Casa), “Número de Moradores no Domicílio” (3 ou menos e Mais do que 3), “Número de crianças menores de 5 anos” (2 ou mais e 1) e “Gênero” (Feminino e Masculino). Responda às questões abaixo, sempre justificando sua interpretação (30 pontos).
+
+![Exercicio2](https://dl.dropboxusercontent.com/s/f7hhjl5bsim214c/Imagem1.png)
+
+**a.	Descreva os maiores fatores de risco para a Anemia deixando clara sua interpretação dos resultados.**
+
+  Os principais fatores de risco associados à anemia podem ser identificados no estudo como àqueles que possuem uma maior chance (OR) de estarem associados com casos de anemia quando comparadas duas condições. Dessa forma os seguintes fatores são identificados como aumentando a chance das crianças terem anemia:  
+  
+  - Ser criança cuja a mãe é dona de casa (0R= 5,01; IC95%= 1.64 -15,21; p=0,005) - indicando que estas crianças quando comparadas com crianças cujas mães trabalham foram, apresentam 5 vezes mais chances de terem anemia, sendo que esta estimativa variava de 64% à aproximadamente 15 vezes mais chances de terem anemia na população.
+  
+  - Ser uma criança que reside em moradia com mais de 3 pessoas (0R= 3,08; IC95%= 1.20 - 7,91; p=0,019) - indicando que estas quando comparadas com as que residam em moradias com três ou mais pessoas tinham 3 vezes mais chances de terem anemia e que a estimativa populacional desta chance variava de 20% até aproximadamente 8 vezes mais chances.
+  
+  - Ser do sexo masculino com 2 vezes mais chances (0R= 2,38; IC95%= 1.00 - 5,67; p=0,049). Apesar de estatisticamente significativo, os resultados do intervalo de confiança indicam que a chance pode ser desde igual entre crianças do masculino e feminino na população até chegar a 5,67 vezes mais chances de crianças do sexo masculino terem anemia.
+
+**b.	Discuta o risco encontrado para “Número de crianças menores de 5 anos” quanto à sua estimativa (odds ratio) e significância estatística (valor de p). Você acha que é um fator de risco importante?**
+
+  A melhor análise desta variável pode ser feita através da observação do intervalo de confiança do OR estimado ou invés de sua estimativa pontual. O limite inferior do IC foi menor que 1 (OR IC inf = 0,91), indicando que ter em casa 1 (uma) "criança mais jovem do que 5 anos"" poderia ser na população um fator de proteção. Simultaneamente o limite superior do IC (OR IC sup = 7,68) indicou que as crianças nesta condição poderiam ter mais de 7 vezes mais chances de terem anemia. 
+  
+  Dessa forma, a estimativa pontual do OR=2,64 não nos permite tomar uma decisão que considere assumir que possuir 1 (uma) "criança menor do que 5 anos" aumenta a chance de esta possuir anemia em relação às casas que possuem 2 (duas) ou mais. Dado que o intervalo de confiança foi definido como de 95%, o valor de p>0,05 acaba por apontar para a tendência da estimativa incluir um valor de razão de chances igual um (OR=1) e valores que estão acima e abaixo de um (1), impedindo a tomada de decisão em favor da interpretação da estimativa pontual do OR como um fator de risco ou proteção - à exemplo do caso acima.
+  
+###**Referências
+
+  Allaire, JJ Jeffrey Horner, Vicent Marti and Natacha Porte (2015). markdown:
+  'Markdown' Rendering for R. R package version 0.7.7.
+  http://CRAN.R-project.org/package=markdown
+
+  Baptiste, A. (2015). gridExtra: Miscellaneous Functions for "Grid" Graphics. R
+  package version 2.0.0. http://CRAN.R-project.org/package=gridExtra
+  
+  Fox, J & Weisberg, S. (2011). An {R} Companion to Applied Regression, Second
+  Edition. Thousand Oaks CA: Sage. URL:
+  http://socserv.socsci.mcmaster.ca/jfox/Books/Companion
+
+  R Core Team (2015). R: A language and environment for statistical computing. R
+  Foundation for Statistical Computing, Vienna, Austria. URL
+  https://www.R-project.org/.
+  
+  Revelle, W. (2015) psych: Procedures for Personality and Psychological Research,
+  Northwestern University, Evanston, Illinois, USA,
+  http://CRAN.R-project.org/package=psych Version = 1.5.8.
+  
+  Wickham, H. (2009) ggplot2: elegant graphics for data analysis. Springer New York.
+
